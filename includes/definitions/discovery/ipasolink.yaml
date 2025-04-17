@@ -1,0 +1,190 @@
+mib: IPE-SYSTEM-MIB:IPE-COMMON-MIB:IPE-COMMON1000-MIB
+modules:
+    os:
+        hardware:
+            - IPE-COMMON-MIB::invChassisName.1
+            - IPE-COMMON-MIB::invChassisCodeNo.1
+        version:
+            - IPE-COMMON-MIB::invChassisFirmVersion.1
+            - IPE-SYSTEM-MIB::ipeSysInvSoftwareVersion.1
+        serial: IPE-COMMON-MIB::invChassisSerialNo.1
+        sysname: IPE-SYSTEM-MIB::ipeSysNeName.1
+    sensors:
+        pre-cache:
+            data:
+                -
+                    oid:
+                        - entPhysicalName
+        state:
+            data:
+                -
+                    oid: asETHPortTable
+                    value: asETHPortOperStatus
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.3.13.8.1.1.13.{{ $index }}'
+                    descr: 'ETH Status {{ $index }}'
+                    index: 'asETHPortOperStatus.{{ $index }}'
+                    group: 'ETH'
+                    states:
+                        - { value:  0, descr: 'invalid' }
+                        - { value:  1, descr: 'linkDown' }
+                        - { value:  2, descr: 'linkUp' }    
+                -
+                    oid: ipeSysInfoTable
+                    value: ipeSysEquipmentType
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.5.1.1.1.11.{{ $index }}'
+                    descr: 'Hardware Type {{ $index }}'
+                    index: 'ipeSysEquipmentType.{{ $index }}'
+                    group: 'Hardware Type'
+                    states:
+                        - { value:  20, descr: 'PASOLINK+(STM-1)' }
+                        - { value:  30, descr: 'PASOLINK+(STM-0)' }
+                        - { value:  40, descr: 'PASOLINK+(PDH)' } 
+                        - { value:  50, descr: 'PASOLINK+(Nlite-L)' }
+                        - { value:  60, descr: 'PASOLINK+(Mx)' }
+                        - { value:  70, descr: 'PASOLINK+(Nlite-Lx)' } 
+                        - { value:  100, descr: 'PASOLINK NEO(STD)' }
+                        - { value:  110, descr: 'PASOLINK NEO(N+1)' }
+                        - { value:  120, descr: 'PASOLINK NEO(advanced)' }
+                        - { value:  130, descr: 'PASOLINK NEO(Compact)' }
+                        - { value:  140, descr: 'PASOLINK NEO(NODAL)' }
+                        - { value:  150, descr: 'PASOLINK NEO(HP)' }
+                        - { value:  160, descr: 'NLiteNEO' }
+                        - { value:  200, descr: 'iPASOLINK 200' }
+                        - { value:  201, descr: 'iPASOLINK 100' }
+                        - { value:  210, descr: 'iPASOLINK 200' }
+                        - { value:  221, descr: 'iPASOLINK 100' }
+                        - { value:  321, descr: 'iPASOLINK 100E' }
+                        - { value:  400, descr: 'iPASOLINK 400' }
+                        - { value:  450, descr: 'iPASOLINK 400A' }
+                        - { value:  501, descr: 'iPASOLINK SX' }
+                        - { value:  510, descr: 'iPASOLINK iX' }
+                        - { value:  520, descr: 'iPASOLINK EX' }
+                        - { value:  1000, descr: 'iPASOLINK 1000' }
+                        - { value:  5000, descr: '5000iPS' }
+                        - { value:  10400, descr: 'iPASOLINK VR 4' }
+                        - { value:  10480, descr: 'iPASOLINK iX' }
+                        - { value:  11000, descr: 'iPASOLINK VR 10' }
+                        - { value:  'Type-M', descr: 'iPASOLINK VR 4' }
+                        - { value:  'Type-I', descr: 'iPASOLINK iX' }
+                        - { value:  'Type-H', descr: 'iPASOLINK VR 10' }
+        fanspeed:    
+            data:
+                -
+                    oid: meteringFanTable
+                    value: meteringFanSpeed1
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.8.3.1.3.{{ $index }}'
+                    descr: 'Fan 1'
+                    skip_values:
+                        -
+                            oid: 'meteringFanSpeed1Status.{{ $index }}'
+                            op: '!='
+                            value: 1
+                -
+                    oid: meteringFanTable
+                    value: meteringFanSpeed2
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.8.3.1.5.{{ $index }}'
+                    descr: 'Fan 2'
+                    skip_values:
+                        -
+                            oid: 'meteringFanSpeed2Status.{{ $index }}'
+                            op: '!='
+                            value: 1
+                -
+                    oid: meteringFanTable
+                    value: meteringFanSpeed1
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.8.3.1.7.{{ $index }}'
+                    descr: 'Fan 3'
+                    skip_values:
+                        -
+                            oid: 'meteringFanSpeed3Status.{{ $index }}'
+                            op: '!='
+                            value: 1
+        temperature:
+            data:
+                -
+                    oid: meteringTable
+                    value: metSysTempODUValue
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.8.1.1.10.{{ $index }}'
+                    index: 'metSysTempODUValue.{{ $index }}'
+                    group: 'ODU'
+                    descr: '{{ $entPhysicalName }} ODU Temperature'
+                    skip_values:
+                        -
+                            oid: 'metSysTempODUStatus.{{ $index }}'
+                            value: 2
+                -
+                    oid: meteringTable
+                    value: metSysTempIDUValue
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.8.1.1.12.{{ $index }}'
+                    index: 'metSysTempIDUValue.{{ $index }}'
+                    group: 'IDU'
+                    descr: '{{ $entPhysicalName }} IDU Temperature'
+                    skip_values:
+                        -
+                            oid: 'metSysTempIDUStatus.{{ $index }}'
+                            value: 2
+                -
+                    oid: ctrlGroupTable
+                    value: ctrlTemperature
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.3.3.1.1.13.{{ $index }}'
+                    index: 'ctrlTemperature.{{ $index }}'
+                    group: 'Main Board Temperature'
+                    descr: 'Main Board Temperature'
+                    divisor: 10
+                    skip_values:
+                        -
+                            oid: 'ctrlTempAlarm.{{ $index }}'
+                            op: '!='
+                            value: 1
+        ber:
+            data:
+                -
+                    oid: meteringTable
+                    value: metSysBitErrorRateValue
+                    num_oid: '	.1.3.6.1.4.1.119.2.3.69.501.8.1.1.14.{{ $index }}'
+                    index: 'metSysBitErrorRateValue.{{ $index }}'
+                    group: 'Bit Error Rate'
+                    descr: '{{ $entPhysicalName }} Bit Error Rate'
+                    skip_values:
+                        -
+                            oid: 'metSysBitErrorRateStatus.{{ $index }}'
+                            value: 2
+        dbm:
+            data:
+                -
+                    oid: meteringTable
+                    value: metSysTxPowerValue
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.8.1.1.4.{{ $index }}'
+                    index: 'metSysTxPowerValue.{{ $index }}'
+                    group: 'Transmitter'
+                    descr: '{{ $entPhysicalName }} TX Power'
+                    skip_values:
+                        -
+                            oid: 'metSysTxPowerStatus.{{ $index }}'
+                            op: '!='
+                            value: 1
+                -
+                    oid: meteringTable
+                    value: metSysRxLevelValue
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.8.1.1.6.{{ $index }}'
+                    index: 'metSysRxLevelValue.{{ $index }}'
+                    group: 'Receiver'
+                    descr: '{{ $entPhysicalName }} RX Power'
+                    skip_values:
+                        -
+                            oid: 'metSysRxLevelStatus.{{ $index }}'
+                            op: '!='
+                            value: 1
+        voltage:
+            data:
+                -
+                    oid: meteringTable
+                    value: metSysPSVoltageValue
+                    num_oid: '.1.3.6.1.4.1.119.2.3.69.501.8.1.1.8.{{ $index }}'
+                    index: 'metSysPSVoltageValue.{{ $index }}'
+                    group: 'Power Supply'
+                    descr: '{{ $entPhysicalName }} ODU Power Supply'
+                    skip_values:
+                        -
+                            oid: 'metSysPSVoltageStatus.{{ $index }}'
+                            value: 2
