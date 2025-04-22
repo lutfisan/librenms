@@ -27,6 +27,11 @@ if ($device['os'] == 'nokia-isam') {
     require base_path('includes/discovery/ports/nokia-isam.inc.php');
 }
 
+//Get NEC iPasolik ports
+if ($device['os'] == 'ipasolink') {
+    require base_path('includes/discovery/ports/ipasolink.inc.php');
+}
+
 //Get Bison ports
 if ($device['os'] == 'bison') {
     require base_path('includes/discovery/ports/bison.inc.php');
