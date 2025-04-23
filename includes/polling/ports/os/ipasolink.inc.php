@@ -1,69 +1,95 @@
 <?php
 
-echo "\nDiscovering NEC iPasolink ports...\n";
+unset($port_stats);
 
-// Fetch standard IF-MIB data
-$if_data = SnmpQuery::walk('IF-MIB::ifXTable')->table(1);
+echo "NEC iPasolink Port Discovery: ";
 
-// Fetch vendor-specific data for NEC iPasolink devices
-$ipe_system_data = SnmpQuery::walk([
+// Fetch vendor-specific data for port discovery
+$entries = SnmpQuery::walk([
+    'IF-MIB::ifName',
+    'IPE-SYSTEM-MIB::ipeCfgPortEtherEnable',
     'IPE-SYSTEM-MIB::ipeCfgPortModemEnable',
     'IPE-SYSTEM-MIB::ipeStsPortEtherLinkUp',
-    'IPE-SYSTEM-MIB::ipeStsPortEtherDuplex'
-])->table(1);
-
-$ipe_common_data = SnmpQuery::walk([
+    'IPE-SYSTEM-MIB::ipeStsPortEtherDuplex',
     'IPE-COMMON-MIB::invMacAddress',
     'IPE-COMMON-MIB::atpcPowerMode',
+    'IPE-COMMON-MIB::modemPsOff',
     'IPE-COMMON-MIB::asETHPortInterfaceType',
+    'IPE-COMMON-MIB::asETHPortSpeedDuplex',
+    'IPE-COMMON-MIB::asETHPortAdminStatus',
     'IPE-COMMON-MIB::asETHPortOperStatus'
 ])->table(1);
 
-// Initialize the port_stats array
-$port_stats = [];
+// Process each port entry
+foreach ($entries as $ifIndex => $entry) {
+    // Determine ifType based on custom logic
+    $ifType = 'other'; // Default
+    if (isset($entry['IPE-SYSTEM-MIB::ipeStsPortEtherLinkUp'], $entry['IPE-COMMON-MIB::invMacAddress']) ||
+        preg_match('/^(eth|bcm)/', $entry['IF-MIB::ifName'] ?? '')) {
+        $ifType = 'ethernetCsmacd';
+    } elseif (isset($entry['IPE-COMMON-MIB::asETHPortInterfaceType'])) {
+        $ifType = mapInterfaceType($entry['IPE-COMMON-MIB::asETHPortInterfaceType']);
+    } elseif (isset($entry['IPE-COMMON-MIB::atpcPowerMode'])) {
+        $ifType = 'otnOdu';
+    }
 
-// Process standard IF-MIB data
-foreach ($if_data as $index => $port) {
-    $port_stats[$index] = [
-        'ifIndex' => $index,
-        'ifName' => $port['IF-MIB::ifName'] ?? '',
-        'ifDescr' => $port['IF-MIB::ifDescr'] ?? '',
-        'ifType' => $port['IF-MIB::ifType'] ?? '',
-        'ifOperStatus' => $port['IF-MIB::ifOperStatus'] ?? '',
-        'ifAdminStatus' => $port['IF-MIB::ifAdminStatus'] ?? '',
-        'ifPhysAddress' => $port['IF-MIB::ifPhysAddress'] ?? '',
+    // Determine ifAdminStatus
+    $ifAdminStatus = 'up'; // Default
+    if (isset($entry['IPE-SYSTEM-MIB::ipeCfgPortEtherEnable'])) {
+        $ifAdminStatus = $entry['IPE-SYSTEM-MIB::ipeCfgPortEtherEnable'] == 1 ? 'up' : 'down';
+    } elseif (isset($entry['IPE-COMMON-MIB::asETHPortAdminStatus'])) {
+        $ifAdminStatus = $entry['IPE-COMMON-MIB::asETHPortAdminStatus'] == 1 ? 'up' : 'down';
+    } elseif (isset($entry['IPE-SYSTEM-MIB::ipeCfgPortModemEnable'])) {
+        $ifAdminStatus = $entry['IPE-SYSTEM-MIB::ipeCfgPortModemEnable'] == 1 ? 'up' : 'down';
+    } elseif (isset($entry['IPE-COMMON-MIB::modemPsOff'])) {
+        $ifAdminStatus = $entry['IPE-COMMON-MIB::modemPsOff'] == 2 ? 'up' : 'down';
+    // } elseif (isset($entry['IPE-COMMON-MIB::atpcPowerMode'])) {
+    //     $ifAdminStatus = $entry['IPE-COMMON-MIB::atpcPowerMode'] == 'active' ? 'up' : 'down';
+    } elseif (strpos($entry['IF-MIB::ifName'], 'lo')) {
+        $ifOperStatus = 'up';
+    }
+
+    // Determine ifOperStatus
+    $ifOperStatus = 'unknown';
+    if (isset($entry['IPE-SYSTEM-MIB::ipeStsPortEtherLinkUp'])) {
+        $ifOperStatus = $entry['IPE-SYSTEM-MIB::ipeStsPortEtherLinkUp'] == 1 ? 'up' : 'down';
+    } elseif (isset($entry['IPE-COMMON-MIB::asETHPortOperStatus'])) {
+        $ifOperStatus = $entry['IPE-COMMON-MIB::asETHPortOperStatus'] == 2 ? 'up' : 'down';
+    } elseif (isset($entry['IPE-SYSTEM-MIB::ipeCfgPortModemEnable'])) {
+        $ifOperStatus = $entry['IPE-SYSTEM-MIB::ipeCfgPortModemEnable'] == 1 ? 'up' : 'down';
+    // } elseif (isset($entry['IPE-COMMON-MIB::atpcPowerMode'])) {
+    //     $ifOperStatus = $entry['IPE-COMMON-MIB::atpcPowerMode'] == 'active' ? 'up' : 'down';
+    } elseif (strpos($entry['IF-MIB::ifName'], 'lo')) {
+        $ifOperStatus = 'up';
+    }
+
+    // Prepare port data for LibreNMS
+    $port_data = [
+        'ifIndex' => $ifIndex,
+        'ifDescr' => $entry['IF-MIB::ifName'] ?? "Port $ifIndex",
+        'ifName' => $entry['IF-MIB::ifName'] ?? "Port $ifIndex",
+        'ifType' => $ifType,
+        'ifOperStatus' => $ifOperStatus,
+        'ifPhysAddress' => $entry['IPE-COMMON-MIB::invMacAddress'] ?? '',
+        'ifAdminStatus' => $ifAdminStatus
     ];
-}
 
-// Process vendor-specific data from IPE-SYSTEM-MIB
-foreach ($ipe_system_data as $index => $system_port) {
-    // If the port doesn't exist in port_stats, create a basic entry
-    if (!isset($port_stats[$index])) {
-        $port_stats[$index] = [
-            'ifIndex' => $index,
-            'ifDescr' => "Port $index",
-        ];
-    }
-
-    // Map vendor-specific system data
-    $port_stats[$index]['ifAdminStatus'] = $system_port['IPE-SYSTEM-MIB::ipeCfgPortModemEnable'] === 'enabled' ? 'up' : 'down';
-    $port_stats[$index]['ifOperStatus'] = $system_port['IPE-SYSTEM-MIB::ipeStsPortEtherLinkUp'] == 1 ? 'up' : 'down';
-    $port_stats[$index]['ifDuplex'] = $system_port['IPE-SYSTEM-MIB::ipeStsPortEtherDuplex'] == 2 ? 'fullDuplex' : 'halfDuplex';
-}
-
-// Process vendor-specific data from IPE-COMMON-MIB
-foreach ($ipe_common_data as $index => $common_port) {
-    if (isset($port_stats[$index])) {
-        $port_stats[$index]['ifPhysAddress'] = $common_port['IPE-COMMON-MIB::invMacAddress'] ?? '';
-        $port_stats[$index]['ifType'] = $common_port['IPE-COMMON-MIB::asETHPortInterfaceType'] ?? 'other';
-        $port_stats[$index]['ifOperStatus'] = $common_port['IPE-COMMON-MIB::asETHPortOperStatus'] == 'linkUp' ? 'up' : 'down';
-    }
-}
-
-// Discover ports in LibreNMS
-foreach ($port_stats as $ifIndex => $port_data) {
-    discover_port($device, $port_data);
+    // Add to $port_stats for LibreNMS to process
+    $port_stats[$ifIndex] = $port_data;
 }
 
 echo count($port_stats) . " ports created.\n";
 echo "Port discovery completed.\n";
+
+
+// Helper function to map custom interface type to standard ifType
+function mapInterfaceType($customType) {
+    $mapping = [
+        'fiber' => 'opticalChannel',
+        'copper' => 'ethernetCsmacd',
+        // Add more mappings based on MIB definitions
+    ];
+    return $mapping[$customType] ?? 'other';
+}
+
+unset($entries);
