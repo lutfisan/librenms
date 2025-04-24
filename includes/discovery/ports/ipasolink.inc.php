@@ -45,8 +45,8 @@ foreach ($entries as $ifIndex => $entry) {
         $ifAdminStatus = $entry['IPE-COMMON-MIB::modemPsOff'] == 2 ? 'up' : 'down';
     // } elseif (isset($entry['IPE-COMMON-MIB::atpcPowerMode'])) {
     //     $ifAdminStatus = $entry['IPE-COMMON-MIB::atpcPowerMode'] == 'active' ? 'up' : 'down';
-    } elseif (strpos($entry['IF-MIB::ifName'], 'lo')) {
-        $ifOperStatus = 'up';
+    } elseif (str_starts_with($entry['IF-MIB::ifName'], 'lo')) {
+        $ifAdminStatus = 'up';
     }
 
     // Determine ifOperStatus
@@ -59,7 +59,7 @@ foreach ($entries as $ifIndex => $entry) {
         $ifOperStatus = $entry['IPE-SYSTEM-MIB::ipeCfgPortModemEnable'] == 1 ? 'up' : 'down';
     // } elseif (isset($entry['IPE-COMMON-MIB::atpcPowerMode'])) {
     //     $ifOperStatus = $entry['IPE-COMMON-MIB::atpcPowerMode'] == 'active' ? 'up' : 'down';
-    } elseif (strpos($entry['IF-MIB::ifName'], 'lo')) {
+    } elseif (str_starts_with($entry['IF-MIB::ifName'], 'lo')) {
         $ifOperStatus = 'up';
     }
 
