@@ -16,7 +16,7 @@ class DashboardWidgetController extends Controller
         $this->authorize('update', $dashboard);
 
         $this->validate($request, [
-            'widget_type' => Rule::in(DashboardController::$widgets),
+            'widget_type' => Rule::in(DashboardController::listWidgets()->keys()),
         ]);
 
         $type = $request->get('widget_type');
@@ -69,7 +69,7 @@ class DashboardWidgetController extends Controller
         $this->authorize('update', $dashboard);
 
         $validated = $this->getValidationFactory()->make(
-            json_decode($request->get('data', '[]'), true), [
+            json_decode((string) $request->get('data', '[]'), true), [
                 '*' => 'array',
                 '*.id' => 'integer',
                 '*.col' => 'integer',

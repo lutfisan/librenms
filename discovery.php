@@ -15,15 +15,15 @@ $init_modules = ['discovery'];
 require __DIR__ . '/includes/init.php';
 
 $start = microtime(true);
-Log::setDefaultDriver('console');
 $sqlparams = [];
 $options = getopt('h:m:i:n:d::v::a::q', ['os:', 'type:']);
 
 if (! isset($options['q'])) {
-    echo \LibreNMS\Config::get('project_name') . " Discovery\n";
+    echo \App\Facades\LibrenmsConfig::get('project_name') . " Discovery\n";
 }
 
 $where = '';
+$doing = '';
 if (isset($options['h'])) {
     if ($options['h'] == 'odd') {
         $options['n'] = '1';
@@ -40,10 +40,12 @@ if (isset($options['h'])) {
         $doing = 'new';
     } elseif ($options['h']) {
         if (is_numeric($options['h'])) {
-            $where = "AND `device_id` = '" . $options['h'] . "'";
+            $where = 'AND `device_id` = ?';
+            $sqlparams[] = $options['h'];
             $doing = $options['h'];
         } else {
-            $where = "AND `hostname` LIKE '" . str_replace('*', '%', $options['h']) . "'";
+            $where = 'AND `hostname` LIKE ?';
+            $sqlparams[] = str_replace('*', '%', $options['h']);
             $doing = $options['h'];
         }
     }//end if
@@ -60,11 +62,13 @@ if (isset($options['type'])) {
 }
 
 if (isset($options['i']) && $options['i'] && isset($options['n'])) {
-    $where .= ' AND MOD(device_id,' . $options['i'] . ") = '" . $options['n'] . "'";
+    $where .= ' AND MOD(device_id,?) = ?';
+    $sqlparams[] = $options['i'];
+    $sqlparams[] = $options['n'];
     $doing = $options['n'] . '/' . $options['i'];
 }
 
-if (Debug::set(isset($options['d']), false) || isset($options['v'])) {
+if (Debug::set(isset($options['d'])) || isset($options['v'])) {
     echo \LibreNMS\Util\Version::get()->header();
 
     echo "DEBUG!\n";
@@ -97,8 +101,8 @@ $module_override = parse_modules('discovery', $options);
 
 $discovered_devices = 0;
 
-if (! empty(\LibreNMS\Config::get('distributed_poller_group'))) {
-    $where .= ' AND poller_group IN(' . \LibreNMS\Config::get('distributed_poller_group') . ')';
+if (! empty(\App\Facades\LibrenmsConfig::get('distributed_poller_group'))) {
+    $where .= ' AND poller_group IN(' . \App\Facades\LibrenmsConfig::get('distributed_poller_group') . ')';
 }
 
 global $device;
@@ -126,7 +130,7 @@ if (isset($new_discovery_lock)) {
     $new_discovery_lock->release();
 }
 
-$string = $argv[0] . " $doing " . date(\LibreNMS\Config::get('dateformat.compact')) . " - $discovered_devices devices discovered in $proctime secs";
+$string = $argv[0] . " $doing " . date(\App\Facades\LibrenmsConfig::get('dateformat.compact')) . " - $discovered_devices devices discovered in $proctime secs";
 d_echo("$string\n");
 
 if (! isset($options['q'])) {

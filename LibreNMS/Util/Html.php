@@ -26,7 +26,7 @@
 
 namespace LibreNMS\Util;
 
-use LibreNMS\Config;
+use App\Facades\LibrenmsConfig;
 use LibreNMS\Enum\PowerState;
 use LibreNMS\Enum\Severity;
 
@@ -89,7 +89,7 @@ class Html
                 $graph_array['width'] = '215';
             }
 
-            $periods = Config::get('graphs.mini.widescreen');
+            $periods = LibrenmsConfig::get('graphs.mini.widescreen');
         } else {
             if (! array_key_exists('height', $graph_array)) {
                 $graph_array['height'] = '100';
@@ -99,7 +99,7 @@ class Html
                 $graph_array['width'] = '215';
             }
 
-            $periods = Config::get('graphs.mini.normal');
+            $periods = LibrenmsConfig::get('graphs.mini.normal');
         }
 
         $screen_width = session('screen_width');
@@ -117,7 +117,7 @@ class Html
 
         $graph_data = [];
         foreach ($periods as $period => $period_text) {
-            $graph_array['from'] = Config::get("time.$period");
+            $graph_array['from'] = LibrenmsConfig::get("time.$period");
             $graph_array_zoom = $graph_array;
             $graph_array_zoom['height'] = '150';
             $graph_array_zoom['width'] = '400';
@@ -175,16 +175,12 @@ class Html
     {
         $state = is_string($state) ? PowerState::STATES[$state] : $state;
 
-        switch ($state) {
-            case PowerState::OFF:
-                return ['OFF', 'label-default'];
-            case PowerState::ON:
-                return ['ON', 'label-success'];
-            case PowerState::SUSPENDED:
-                return ['SUSPENDED', 'label-warning'];
-            default:
-                return ['UNKNOWN', 'label-default'];
-        }
+        return match ($state) {
+            PowerState::OFF => ['OFF', 'label-default'],
+            PowerState::ON => ['ON', 'label-success'],
+            PowerState::SUSPENDED => ['SUSPENDED', 'label-warning'],
+            default => ['UNKNOWN', 'label-default'],
+        };
     }
 
     public static function severityToLabel(Severity $severity, string $text): string

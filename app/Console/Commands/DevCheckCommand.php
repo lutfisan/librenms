@@ -52,15 +52,11 @@ class DevCheckCommand extends LnmsCommand
         $this->addOption('snmpsim', null, InputOption::VALUE_NONE);
         $this->addOption('full', null, InputOption::VALUE_NONE);
         $this->addOption('os-modules-only', null, InputOption::VALUE_NONE);
+        $this->addOption('exclude-phpunit-group', null, InputOption::VALUE_REQUIRED);
         $this->addOption('commands', 'c', InputOption::VALUE_NONE);
     }
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
+    public function handle(): int
     {
         $this->helper = new CiHelper();
         $this->parseInput();
@@ -76,7 +72,7 @@ class DevCheckCommand extends LnmsCommand
         return $result;
     }
 
-    private function parseInput()
+    private function parseInput(): void
     {
         $check = $this->argument('check');
         if (! in_array($check, ['all', 'lint', 'style', 'unit', 'web', 'ci'])) {
@@ -89,7 +85,7 @@ class DevCheckCommand extends LnmsCommand
         $this->helper->enable('style', $check == 'all' || $check === 'style');
         $this->helper->enable('lint', $check == 'all' || $check == 'ci' || $check === 'lint');
         $this->helper->enable('unit', $check == 'all' || $check == 'ci' || $check === 'unit');
-        $this->helper->enable('web', $check == 'ci' || $check === 'web');
+        $this->helper->enable('web', $check === 'web');
 
         if ($os = $this->option('os')) {
             $this->helper->setFlags([
@@ -99,6 +95,10 @@ class DevCheckCommand extends LnmsCommand
                 'web_enable' => false,
             ]);
             $this->helper->setOS(explode(',', $os));
+        }
+
+        if ($this->option('exclude-phpunit-group')) {
+            $this->helper->setExcludedPhpunitGroups(explode(',', $this->option('exclude-phpunit-group')));
         }
 
         $this->helper->setFlags([

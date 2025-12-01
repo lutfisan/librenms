@@ -1,4 +1,4 @@
-name: doc
+name: Docs
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
       - '.github/workflows/doc.yml'
       - 'doc/**'
       - 'mkdocs.yml'
+      - 'resources/definitions/os_detection/**'
   pull_request:
     branches:
       - 'master'
@@ -15,6 +16,7 @@ on:
       - '.github/workflows/doc.yml'
       - 'doc/**'
       - 'mkdocs.yml'
+      - 'resources/definitions/os_detection/**'
 
 permissions:
   contents: read # to fetch code (actions/checkout)
@@ -26,6 +28,13 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /resources/definitions/os_detection
+            /doc
+            /mkdocs.yml
       -
         name: Build mkdocs Docker image
         run: |

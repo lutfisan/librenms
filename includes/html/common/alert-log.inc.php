@@ -43,6 +43,8 @@ if (Auth::user()->hasGlobalAdmin()) {
     $admin_verbose_details = '<th data-column-id="verbose_details" data-sortable="false">Details</th>';
 }
 
+$device_id ??= (int) ($vars['device'] ?? 0);
+
 $common_output[] = '<div class="panel panel-default panel-condensed">
                 <div class="panel-heading">
                     <div class="row">
@@ -56,11 +58,11 @@ $common_output[] = '<div class="panel panel-default panel-condensed">
                 </div>
             ';
 
-$device = DeviceCache::get((int) $vars['device_id']);
+$device = DeviceCache::get($device_id);
 $device_selected = json_encode($device->exists ? ['id' => $device->device_id, 'text' => $device->displayName()] : '');
 
 if (isset($_POST['state'])) {
-    $selected_state = '<option value="' . htmlspecialchars($_POST['state']) . '" selected="selected">';
+    $selected_state = '<option value="' . htmlspecialchars((string) $_POST['state']) . '" selected="selected">';
     $selected_state .= array_search((int) $_POST['state'], $alert_states) . '</option>';
 } else {
     $selected_state = '';
@@ -150,8 +152,8 @@ $common_output[] = '<div class="form-group"> \
         post: function () {
             return {
                 id: "alertlog",
-                device_id: \'' . htmlspecialchars($_POST['device_id'] ?? $device_id) . '\',
-                state: \'' . htmlspecialchars($_POST['state']) . '\',
+                device_id: \'' . htmlspecialchars((string) $device_id ?: '') . '\',
+                state: \'' . htmlspecialchars((string) $_POST['state']) . '\',
                 min_severity: \'' . htmlspecialchars($_POST['min_severity']) . '\'
             };
         },
@@ -164,7 +166,7 @@ $common_output[] = '<div class="form-group"> \
         max = high - low;
         search = $(\'.search-field\').val();
 
-        $(".pdf-export").html("<a href=\'pdf.php?report=alert-log&device_id=' . htmlspecialchars($_POST['device_id']) . '&string=" + search + "&results=" + max + "&start=" + low + "\'><i class=\'fa fa-file-pdf-o fa-lg icon-theme\' aria-hidden=\'true\'></i> Export to PDF</a>");
+        $(".pdf-export").html("<a href=\'pdf.php?report=alert-log&device_id=' . htmlspecialchars($device_id) . '&string=" + search + "&results=" + max + "&start=" + low + "\'><i class=\'fa fa-file-pdf-o fa-lg icon-theme\' aria-hidden=\'true\'></i> Export to PDF</a>");
 
         grid.find(".incident-toggle").each(function () {
             $(this).parent().addClass(\'incident-toggle-td\');

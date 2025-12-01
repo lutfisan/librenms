@@ -41,6 +41,7 @@ if (!Bill::where('bill_id', $bill_id)->exists()) {
     $total_data = $bill_data['total_data'];
     $rate_average = $bill_data['rate_average'];
 
+    $paid_kb ??= 0;
     if ($rate_95th > $paid_kb) {
         $over = ($rate_95th - $paid_kb);
         $bill_text = $over . 'Kbit excess.';
@@ -51,8 +52,8 @@ if (!Bill::where('bill_id', $bill_id)->exists()) {
         $bill_color = '#0000cc';
     }
 
-    $fromtext = dbFetchCell("SELECT DATE_FORMAT($datefrom, '" . \LibreNMS\Config::get('dateformat.mysql.date') . "')");
-    $totext = dbFetchCell("SELECT DATE_FORMAT($dateto, '" . \LibreNMS\Config::get('dateformat.mysql.date') . "')");
+    $fromtext = dbFetchCell("SELECT DATE_FORMAT($datefrom, '" . \App\Facades\LibrenmsConfig::get('dateformat.mysql.date') . "')");
+    $totext = dbFetchCell("SELECT DATE_FORMAT($dateto, '" . \App\Facades\LibrenmsConfig::get('dateformat.mysql.date') . "')");
     $unixfrom = dbFetchCell("SELECT UNIX_TIMESTAMP('$datefrom')");
     $unixto = dbFetchCell("SELECT UNIX_TIMESTAMP('$dateto')");
 
@@ -91,7 +92,7 @@ if (!Bill::where('bill_id', $bill_id)->exists()) {
         echo '</div></div>';
     }//end print_port_list?>
 
-    <h2>Bill: <?php echo htmlentities($bill_data['bill_name']); ?></h2>
+    <h2>Bill: <?php echo htmlentities((string) $bill_data['bill_name']); ?></h2>
 
     <?php
     print_optionbar_start();
@@ -217,7 +218,7 @@ if (!Bill::where('bill_id', $bill_id)->exists()) {
         $rightnow = date('U');
 
         if ($vars['view'] == 'accurate') {
-            $bi = "<img src='billing-graph.php?bill_id=" . $bill_id . '&amp;bill_code=' . htmlspecialchars($_GET['bill_code']);
+            $bi = "<img src='billing-graph.php?bill_id=" . $bill_id . '&amp;bill_code=' . htmlspecialchars((string) $_GET['bill_code']);
             $bi .= '&amp;from=' . $unixfrom . '&amp;to=' . $unixto;
             $bi .= '&amp;x=1190&amp;y=250';
             $bi .= "$type'>";
@@ -227,12 +228,12 @@ if (!Bill::where('bill_id', $bill_id)->exists()) {
             $li .= '&amp;x=1190&amp;y=250';
             $li .= "$type'>";
 
-            $di = "<img src='billing-graph.php?bill_id=" . $bill_id . '&amp;bill_code=' . htmlspecialchars($_GET['bill_code']);
-            $di .= '&amp;from=' . \LibreNMS\Config::get('time.day') . '&amp;to=' . \LibreNMS\Config::get('time.now');
+            $di = "<img src='billing-graph.php?bill_id=" . $bill_id . '&amp;bill_code=' . htmlspecialchars((string) $_GET['bill_code']);
+            $di .= '&amp;from=' . \App\Facades\LibrenmsConfig::get('time.day') . '&amp;to=' . \App\Facades\LibrenmsConfig::get('time.now');
             $di .= '&amp;x=1190&amp;y=250';
             $di .= "$type'>";
 
-            $mi = "<img src='billing-graph.php?bill_id=" . $bill_id . '&amp;bill_code=' . htmlspecialchars($_GET['bill_code']);
+            $mi = "<img src='billing-graph.php?bill_id=" . $bill_id . '&amp;bill_code=' . htmlspecialchars((string) $_GET['bill_code']);
             $mi .= '&amp;from=' . $lastmonth . '&amp;to=' . $rightnow;
             $mi .= '&amp;x=1190&amp;y=250';
             $mi .= "$type'>";
@@ -246,7 +247,7 @@ if (!Bill::where('bill_id', $bill_id)->exists()) {
             $li .= '&amp;width=1000&amp;height=200&amp;total=1&amp;dir=' . $dir_95th . "'>";
 
             $di = "<img src='graph.php?type=bill_bits&amp;id=" . $bill_id;
-            $di .= '&amp;from=' . \LibreNMS\Config::get('time.day') . '&amp;to=' . \LibreNMS\Config::get('time.now');
+            $di .= '&amp;from=' . \App\Facades\LibrenmsConfig::get('time.day') . '&amp;to=' . \App\Facades\LibrenmsConfig::get('time.now');
             $di .= '&amp;width=1000&amp;height=200&amp;total=1&amp;dir=' . $dir_95th . "'>";
 
             $mi = "<img src='graph.php?type=bill_bits&amp;id=" . $bill_id;

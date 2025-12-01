@@ -1,8 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+use App\Facades\LibrenmsConfig;
 use Illuminate\Support\Str;
-use LibreNMS\Config;
 use LibreNMS\Util\Debug;
 use LibreNMS\Util\Number;
 
@@ -13,10 +13,11 @@ $init_modules = [];
 require $install_dir . '/includes/init.php';
 $options = getopt('dh:e:', ['help']);
 
-Config::set('rrd.enable', false);
-Config::set('influxdb.enable', false);
-Config::set('influxdbv2.enable', false);
-Config::set('nographite', true);
+LibrenmsConfig::set('rrd.enable', false);
+LibrenmsConfig::set('influxdb.enable', false);
+LibrenmsConfig::set('influxdbv2.enable', false);
+LibrenmsConfig::set('nographite', true);
+LibrenmsConfig::set('kafka.enable', false);
 
 function print_help()
 {
@@ -41,8 +42,8 @@ if (isset($options['h'])) {
         $where = 'AND `device_id` = ?';
         $params = [$options['h']];
     } elseif (Str::contains($options['h'], ',')) {
-        $device_ids = array_map('trim', explode(',', $options['h']));
-        $device_ids = array_filter($device_ids, 'is_numeric');
+        $device_ids = array_map(trim(...), explode(',', $options['h']));
+        $device_ids = array_filter($device_ids, is_numeric(...));
         $where = 'AND `device_id` in ' . dbGenPlaceholders(count($device_ids));
         $params = $device_ids;
     } else {
@@ -61,7 +62,7 @@ if (isset($options['e'])) {
 }
 
 echo 'Full Polling: ';
-Config::set('polling.selected_ports', false);
+LibrenmsConfig::set('polling.selected_ports', false);
 foreach ($devices as $index => $device) {
     echo $device['device_id'] . ' ';
     if (! Debug::isEnabled()) {
@@ -75,7 +76,7 @@ foreach ($devices as $index => $device) {
 }
 echo PHP_EOL;
 
-Config::set('polling.selected_ports', true);
+LibrenmsConfig::set('polling.selected_ports', true);
 echo 'Selective Polling: ';
 foreach ($devices as $index => $device) {
     echo $device['device_id'] . ' ';
@@ -136,7 +137,7 @@ $stats = [
 
 echo PHP_EOL;
 $header = "| %9.9s | %-11.11s | %10.10s | %14.14s | %10.10s | %14.14s | %8.10s | %5.9s | %5.5s |\n";
-call_user_func_array('printf', array_merge([$header], $stats));
+call_user_func_array(printf(...), array_merge([$header], $stats));
 
 $mask = "| %9.9s | %-11.11s | %10.10s | %14.3f | %9.3fs | %13.3fs | %s%+7.3fs\e[0m | %s%+4.0f%%\e[0m | %5.5s |\n";
 foreach ($devices as $device) {

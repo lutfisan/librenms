@@ -31,9 +31,8 @@ require_once 'includes/html/modal/delete_service.inc.php';
                     'basic' => 'Basic',
                 ];
 
-                if (! $vars['view']) {
-                    $vars['view'] = 'basic';
-                }
+                $vars['view'] ??= 'basic';
+                $vars['state'] ??= 'all';
 
                 $status_options = [
                     'all' => 'All',
@@ -42,9 +41,6 @@ require_once 'includes/html/modal/delete_service.inc.php';
                     'critical' => 'Critical',
                 ];
 
-                if (! $vars['state']) {
-                    $vars['state'] = 'all';
-                }
 
                 // The menu option - on the left
 
@@ -69,8 +65,6 @@ require_once 'includes/html/modal/delete_service.inc.php';
 
                     $sep = ' | ';
                 }
-
-                unset($sep);
 
                 // The status option - on the right
 
@@ -104,6 +98,7 @@ require_once 'includes/html/modal/delete_service.inc.php';
                 echo '<div class="panel-body">';
 
                 $sql_param = [];
+                $where = '';
 
                 if (isset($vars['state'])) {
                     if ($vars['state'] == 'ok') {
@@ -134,7 +129,7 @@ require_once 'includes/html/modal/delete_service.inc.php';
                 foreach (dbFetchRows($host_sql, $host_par) as $device) {
                     $device_id = $device['device_id'];
                     $device_hostname = $device['hostname'];
-                    $device_sysName = htmlspecialchars($device['sysName']);
+                    $device_sysName = htmlspecialchars((string) $device['sysName']);
                     $devlink = generate_device_link($device, null, ['tab' => 'services']);
                     if ($shift == 1) {
                         array_unshift($sql_param, $device_id);

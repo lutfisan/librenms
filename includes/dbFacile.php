@@ -20,7 +20,9 @@
  * @see https://laravel.com/docs/eloquent
  */
 
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Event;
 use LibreNMS\DB\Eloquent;
 use LibreNMS\Util\Laravel;
 
@@ -58,21 +60,25 @@ function dbQuery($sql, $parameters = [])
  * @deprecated Please use Eloquent instead; https://laravel.com/docs/eloquent#inserting-and-updating-models
  * @see https://laravel.com/docs/eloquent#inserting-and-updating-models
  */
-function dbInsert($data, $table)
+function dbInsert($data, $table): ?int
 {
     $sql = 'INSERT IGNORE INTO `' . $table . '` (`' . implode('`,`', array_keys($data)) . '`)  VALUES (' . implode(',', dbPlaceHolders($data)) . ')';
 
     try {
         $result = Eloquent::DB()->insert($sql, (array) $data);
+
+        if ($result) {
+            $lastInsertId = Eloquent::DB()->getPdo()->lastInsertId();
+
+            if ($lastInsertId) {
+                return (int) $lastInsertId;
+            }
+        }
     } catch (PDOException $pdoe) {
         dbHandleException(new QueryException('dbFacile', $sql, $data, $pdoe));
     }
 
-    if ($result) {
-        return Eloquent::DB()->getPdo()->lastInsertId();
-    } else {
-        return null;
-    }
+    return null;
 }//end dbInsert()
 
 /**
@@ -211,7 +217,7 @@ function dbDeleteOrphans($target_table, $parents)
     $where = [];
 
     foreach ((array) $parents as $parent) {
-        $parent_parts = explode('.', $parent);
+        $parent_parts = explode('.', (string) $parent);
         if (count($parent_parts) == 2) {
             [$parent_table, $parent_column] = $parent_parts;
             $target_column = $parent_column;
@@ -246,17 +252,20 @@ function dbDeleteOrphans($target_table, $parents)
  */
 function dbFetchRows($sql, $parameters = [])
 {
-    global $PDO_FETCH_ASSOC;
-
     try {
-        $PDO_FETCH_ASSOC = true;
-        $rows = Eloquent::DB()->select($sql, (array) $parameters);
+        $startTime = microtime(true);
+        $connection = DB::connection();
 
-        return $rows;
+        $query = $connection->getPdo()->prepare($sql);
+        $query->execute((array) $parameters);
+        $all = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+        Event::dispatch(new QueryExecuted($sql, $parameters, $executionTime, $connection));
+
+        return $all;
     } catch (PDOException $pdoe) {
         dbHandleException(new QueryException('dbFacile', $sql, $parameters, $pdoe));
-    } finally {
-        $PDO_FETCH_ASSOC = false;
     }
 
     return [];
@@ -269,19 +278,22 @@ function dbFetchRows($sql, $parameters = [])
  * @deprecated Please use Eloquent instead; https://laravel.com/docs/eloquent
  * @see https://laravel.com/docs/eloquent
  */
-function dbFetchRow($sql = null, $parameters = [])
+function dbFetchRow($sql = null, $parameters = []): ?array
 {
-    global $PDO_FETCH_ASSOC;
-
     try {
-        $PDO_FETCH_ASSOC = true;
-        $row = Eloquent::DB()->selectOne($sql, (array) $parameters);
+        $startTime = microtime(true);
+        $connection = DB::connection();
 
-        return $row;
+        $query = $connection->getPdo()->prepare($sql);
+        $query->execute((array) $parameters);
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+
+        $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+        Event::dispatch(new QueryExecuted($sql, $parameters, $executionTime, $connection));
+
+        return $row === false ? null : $row;
     } catch (PDOException $pdoe) {
         dbHandleException(new QueryException('dbFacile', $sql, $parameters, $pdoe));
-    } finally {
-        $PDO_FETCH_ASSOC = false;
     }
 
     return [];
@@ -295,19 +307,20 @@ function dbFetchRow($sql = null, $parameters = [])
  */
 function dbFetchCell($sql, $parameters = [])
 {
-    global $PDO_FETCH_ASSOC;
-
     try {
-        $PDO_FETCH_ASSOC = true;
-        $row = Eloquent::DB()->selectOne($sql, (array) $parameters);
-        if ($row) {
-            return reset($row);
-            // shift first field off first row
-        }
+        $startTime = microtime(true);
+        $connection = DB::connection();
+
+        $query = $connection->getPdo()->prepare($sql);
+        $query->execute((array) $parameters);
+        $value = $query->fetchColumn();
+
+        $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+        Event::dispatch(new QueryExecuted($sql, $parameters, $executionTime, $connection));
+
+        return $value === false ? null : $value;
     } catch (PDOException $pdoe) {
         dbHandleException(new QueryException('dbFacile', $sql, $parameters, $pdoe));
-    } finally {
-        $PDO_FETCH_ASSOC = false;
     }
 
     return null;
@@ -322,22 +335,20 @@ function dbFetchCell($sql, $parameters = [])
  */
 function dbFetchColumn($sql, $parameters = [])
 {
-    global $PDO_FETCH_ASSOC;
-
-    $cells = [];
-
     try {
-        $PDO_FETCH_ASSOC = true;
-        foreach (Eloquent::DB()->select($sql, (array) $parameters) as $row) {
-            $cells[] = reset($row);
-        }
-        $PDO_FETCH_ASSOC = false;
+        $startTime = microtime(true);
+        $connection = DB::connection();
 
-        return $cells;
+        $query = $connection->getPdo()->prepare($sql);
+        $query->execute((array) $parameters);
+        $column = $query->fetchAll(PDO::FETCH_COLUMN, 0);
+
+        $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+        Event::dispatch(new QueryExecuted($sql, $parameters, $executionTime, $connection));
+
+        return $column;
     } catch (PDOException $pdoe) {
         dbHandleException(new QueryException('dbFacile', $sql, $parameters, $pdoe));
-    } finally {
-        $PDO_FETCH_ASSOC = false;
     }
 
     return [];

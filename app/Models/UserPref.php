@@ -61,7 +61,7 @@ class UserPref extends BaseModel
 
     public function getValueAttribute($value)
     {
-        $decoded = json_decode($value, true);
+        $decoded = json_decode((string) $value, true);
         if (json_last_error() == JSON_ERROR_NONE) {
             return $decoded;
         }
@@ -86,7 +86,9 @@ class UserPref extends BaseModel
     }
 
     // ---- Define Relationships ----
-
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -122,10 +124,6 @@ class UserPref extends BaseModel
             $keyName = $this->getKeyName();
         }
 
-        if (isset($this->original[$keyName])) {
-            return $this->original[$keyName];
-        }
-
-        return $this->getAttribute($keyName);
+        return $this->original[$keyName] ?? $this->getAttribute($keyName);
     }
 }

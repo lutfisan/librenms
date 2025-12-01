@@ -6,7 +6,6 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
-    use CreatesApplication;
     use SnmpsimHelpers;
 
     public function dbSetUp()
@@ -31,7 +30,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function tearDown(): void
     {
-        $this->beforeApplicationDestroyed(function () {
+        $this->beforeApplicationDestroyed(function (): void {
             $this->getConnection()->disconnect();
         });
 
