@@ -36,6 +36,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use LibreNMS\Data\Source\Fping;
 use LibreNMS\Data\Source\FpingResponse;
@@ -49,7 +50,7 @@ class PingCheck implements ShouldQueue
     private Collection $devices;
 
     // working data for loop
-    /** @var Collection */
+    /** @var Collection<int, \Illuminate\Database\Eloquent\Collection<int, Device>> */
     private Collection $deferred;
     /** @var Collection<int, Collection<int, bool>> device id, parent devices */
     private Collection $waiting_on;
@@ -93,13 +94,15 @@ class PingCheck implements ShouldQueue
             Log::debug("Leftover waiting on devices, this shouldn't happen: " . $this->waiting_on->keys()->implode(', '));
         }
 
-        if (\App::runningInConsole()) {
+        if (App::runningInConsole()) {
             printf("Pinged %s devices in %.2fs\n", $this->devices->count(), microtime(true) - $ping_start);
         }
     }
 
     /**
      * Get an ordered list of hostnames that we need to ping starting from devices with no parents
+     *
+     * @param  Collection<string, Device>  $devices
      */
     private function orderHostnames(Collection $devices): array
     {
@@ -127,6 +130,8 @@ class PingCheck implements ShouldQueue
 
     /**
      * Fetch and cache all devices that we need to process
+     *
+     * @return Collection<string, Device>
      */
     private function fetchDevices(): Collection
     {
@@ -178,7 +183,7 @@ class PingCheck implements ShouldQueue
         }
 
         // mark up only if snmp is not down too
-        $changed = app(SetDeviceAvailability::class)->execute($device, $response->success(), AvailabilitySource::ICMP, true);
+        $changed = app(SetDeviceAvailability::class)->execute($device, $response->success(), AvailabilitySource::Icmp, true);
 
         // save last_ping_timetaken and rrd data
         $response->saveStats($device);
@@ -192,7 +197,7 @@ class PingCheck implements ShouldQueue
             Log::debug("Device $device->hostname changed status to $type, running alerts");
 
             if (count($waiting_on) === 0) {
-                Action::execute(RunAlertRulesAction::class, $device);
+                Action::execute(RunAlertRulesAction::class, device: $device);
             } else {
                 Log::debug('Alerts Deferred');
 

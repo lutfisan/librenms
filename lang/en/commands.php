@@ -124,7 +124,9 @@ return [
             'device spec' => 'Device spec to discover: device_id, hostname, wildcard (*), odd, even, all',
         ],
         'options' => [
-            'module' => 'Specify module(s) to be run. submodules may be added with /.  Multiple values allowed.',
+            'modules' => 'Specify module(s) to be run. submodules may be added with /.  Multiple values allowed.',
+            'os' => 'Discover devices only with specified operating system',
+            'type' => 'Discover devices only with specified type',
         ],
         'errors' => [
             'none_up' => 'Device was down, unable to discover.|All devices were down, unable to discover.',
@@ -153,6 +155,8 @@ return [
         'options' => [
             'modules' => 'Specify single module to be run. Comma separate modules, submodules may be added with /',
             'no-data' => 'Do not update datastores (RRD, InfluxDB, etc)',
+            'os' => 'Poll devices only with specified operating system',
+            'type' => 'Poll devices only with specified type',
         ],
         'errors' => [
             'none_up' => 'Device was down, unable to poll.|All devices were down, unable to poll.',
@@ -239,7 +243,30 @@ return [
         'summary' => 'Converted: :converted  Failed: :failed  Skipped: :skipped',
     ],
     'maintenance:cleanup-syslog' => [
+        'description' => 'Cleanup syslog entries older than a specified number of days',
+        'arguments' => [
+            'days' => 'Number of days to keep syslog entries (default: syslog_purge configured value)',
+        ],
+        'bad_days_input' => 'Days must be numeric',
+        'bad_days_setting' => 'Syslog cleanup disabled due to invalid syslog_purge setting',
         'delete' => 'Cleared syslog entries older than :days days (:count rows)',
+        'disabled' => 'Syslog cleanup disabled, days <= 0',
+    ],
+    'maintenance:discover-ssl-certificates' => [
+        'description' => 'Discover SSL certificates on devices (HTTPS port 443)',
+        'options' => [
+            'device' => 'Device spec to discover: device_id, hostname, or all',
+        ],
+        'no_devices' => 'No devices found',
+        'summary' => 'Created: :created, Updated: :updated, Failed: :failed',
+    ],
+    'maintenance:refresh-ssl-certificates' => [
+        'description' => 'Refresh certificate data for stored SSL certificates',
+        'options' => [
+            'id' => 'Certificate ID to refresh (omit to refresh all enabled)',
+        ],
+        'none' => 'No enabled certificates to refresh',
+        'summary' => 'Refreshed: :refreshed, Failed: :failed',
     ],
     'plugin:disable' => [
         'description' => 'Disable all plugins with the given name',

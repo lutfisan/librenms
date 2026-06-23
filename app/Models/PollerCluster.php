@@ -27,12 +27,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LibreNMS\Exceptions\InvalidNameException;
 
 class PollerCluster extends Model
 {
+    use HasFactory;
+
     public $timestamps = false;
     protected $table = 'poller_cluster';
     protected $primaryKey = 'id';
@@ -101,7 +104,7 @@ class PollerCluster extends Model
     /**
      * Get the frontend config definition for this poller
      *
-     * @param  \Illuminate\Support\Collection|bool|null  $groups  optionally supply full list of poller groups to avoid fetching multiple times
+     * @param  \Illuminate\Support\Collection<int, mixed>|bool|null  $groups  optionally supply full list of poller groups to avoid fetching multiple times
      * @return array[]
      */
     public function configDefinition($groups = null)
